@@ -342,10 +342,13 @@
 
   let userName = '';
   let userId = '';
+  let groupId = '';
 
   // LIFF初期化
   liff.init({ liffId: LIFF_ID })
     .then(() => {
+      const context = liff.getContext();
+      if (context && context.groupId) { groupId = context.groupId; }
       if (liff.isLoggedIn()) {
         liff.getProfile().then(profile => {
           userName = profile.displayName;
@@ -400,6 +403,7 @@
       note:       document.getElementById('note').value,
       userName:   userName,
       userId:     userId,
+      groupId:    groupId,
     };
 
     try {
