@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>状態確認フォーム</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    .header {
+      background: linear-gradient(135deg, #2d6a4f, #40916c);
+      color: white;
+      padding: 20px 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .header h1 { font-size: 18px; font-weight: bold; }
+    .header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: bold;
+      color: #2d6a4f;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #d8f3dc;
+    }
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: bold;
+      color: #444;
+      margin-bottom: 6px;
+    }
+    .required { color: #e63946; margin-left: 4px; }
+    .ticket-display {
+      background: #d8f3dc;
+      border: 2px solid #40916c;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #1b4332;
+      text-align: center;
+    }
+    input[type="text"], textarea, select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #40916c;
+    }
+    textarea { min-height: 80px; resize: vertical; }
+    .status-options {
+      display: flex;
+      gap: 10px;
+    }
+    .status-option {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 8px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+      transition: all 0.2s;
+      background: white;
+    }
+    .status-option.selected-故障 {
+      border-color: #e63946;
+      background: #fff0f1;
+      color: #e63946;
+    }
+    .status-option.selected-改善済み {
+      border-color: #40916c;
+      background: #d8f3dc;
+      color: #2d6a4f;
+    }
+    .status-option input { display: none; }
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #2d6a4f, #40916c);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.2s;
+    }
+    .submit-btn:active { opacity: 0.85; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .success-msg {
+      display: none;
+      background: #d8f3dc;
+      border: 2px solid #40916c;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      color: #1b4332;
+      font-weight: bold;
+      font-size: 15px;
+      margin-top: 12px;
+    }
+    .error-msg {
+      display: none;
+      background: #fff0f1;
+      border: 2px solid #e63946;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      color: #e63946;
+      font-size: 14px;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔍 状態確認フォーム</h1>
+  <p>倉庫確認後の結果を入力してください</p>
+</div>
+
+<div class="card">
+  <div class="card-title">📋 対象伝票</div>
+  <div class="field">
+    <label>伝票番号</label>
+    <div class="ticket-display" id="ticketDisplay">読み込み中...</div>
+    <input type="hidden" id="ticketNo">
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">✅ 確認結果</div>
+
+  <div class="field">
+    <label>確認後の結果 <span class="required">*</span></label>
+    <textarea id="result" placeholder="確認後の状態を入力してください"></textarea>
+  </div>
+
+  <div class="field">
+    <label>改善状況 <span class="required">*</span></label>
+    <div class="status-options">
+      <label class="status-option" id="opt-故障">
+        <input type="radio" name="status" value="故障">
+        🔴 故障
+      </label>
+      <label class="status-option" id="opt-改善済み">
+        <input type="radio" name="status" value="改善済み">
+        🟢 改善済み
+      </label>
+    </div>
+  </div>
+</div>
+
+<button class="submit-btn" id="submitBtn" onclick="submitForm()">✅ スプレッドシートに記録する</button>
+
+<div class="success-msg" id="successMsg">
+  ✅ 記録が完了しました！<br>スプレッドシートに反映されました。
+</div>
+<div class="error-msg" id="errorMsg"></div>
+
+<script>
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbwbq-8xp2WO8KrsrYy_pDrT-80VZEd7MesnnOwbbfewdF1SvsYw9hJ1rCHkyZfDu2GHeg/exec';
+
+  // URLから伝票番号を取得
+  window.onload = function() {
+    const params = new URLSearchParams(window.location.search);
+    const ticket = params.get('ticket');
+    if (ticket) {
+      document.getElementById('ticketNo').value = ticket;
+      document.getElementById('ticketDisplay').textContent = ticket;
+    } else {
+      document.getElementById('ticketDisplay').textContent = '伝票番号が指定されていません';
+    }
+  };
+
+  // ラジオボタンのスタイル
+  document.querySelectorAll('input[name="status"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      document.querySelectorAll('.status-option').forEach(opt => {
+        opt.className = 'status-option';
+      });
+      document.getElementById('opt-' + this.value).className = 'status-option selected-' + this.value;
+    });
+  });
+
+  function submitForm() {
+    const ticketNo = document.getElementById('ticketNo').value;
+    const result   = document.getElementById('result').value.trim();
+    const status   = document.querySelector('input[name="status"]:checked');
+
+    if (!ticketNo) {
+      showError('伝票番号が取得できませんでした。LINEのリンクから開き直してください。');
+      return;
+    }
+    if (!result) { showError('確認後の結果を入力してください。'); return; }
+    if (!status)  { showError('改善状況を選択してください。'); return; }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = '送信中...';
+
+    const data = {
+      formType: 'status',
+      ticketNo: ticketNo,
+      result:   result,
+      status:   status.value
+    };
+
+    fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    .then(() => {
+      document.getElementById('successMsg').style.display = 'block';
+      document.getElementById('errorMsg').style.display = 'none';
+      btn.style.display = 'none';
+    })
+    .catch(err => {
+      showError('送信に失敗しました: ' + err.message);
+      btn.disabled = false;
+      btn.textContent = '✅ スプレッドシートに記録する';
+    });
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+</script>
+</body>
+</html>
